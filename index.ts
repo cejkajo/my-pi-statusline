@@ -843,8 +843,38 @@ function renderSegmentWithWidth(
   return { content: rendered.content, width: visibleWidth(rendered.content), visible: true };
 }
 
+function readVesperVariantColor(key: string, fallback: string): string {
+  try {
+    const path = join(homedir(), ".config", "vesper-variant.json");
+    if (!existsSync(path)) return fallback;
+    const parsed = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
+    const value = parsed[key];
+    return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function readVesperPanelBg(): string {
+  return readVesperVariantColor("panelBg", "#161616");
+}
+
+function readVesperPanelFg(): string {
+  return readVesperVariantColor("panelFg", "#FEFEFE");
+}
+
+function hexToRgbTuple(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+}
+
 function powerlineBarBackground(): string {
-  return ansi.getBgAnsi(22, 22, 22); // #161616, matching tmux status-style bg
+  const [r, g, b] = hexToRgbTuple(readVesperPanelBg());
+  return ansi.getBgAnsi(r, g, b);
 }
 
 function joinPowerlineParts(parts: string[], presetDef: ReturnType<typeof getPreset>, bg: string): string {
@@ -888,7 +918,7 @@ function buildContentFromParts(
   const leftContent = `${left}`;
   const rightContent = `${right} `;
   const gap = availableWidth
-    ? Math.max(1, availableWidth - visibleWidth(leftContent) - visibleWidth(rightContent))
+    ? Math.max(0, availableWidth - visibleWidth(leftContent) - visibleWidth(rightContent))
     : 1;
   return `${bg}${leftContent}${" ".repeat(gap)}${rightContent}${ansi.reset}`;
 }
@@ -919,58 +949,74 @@ function computeResponsiveLayout(
     return rendered;
   };
 
-  const leftRendered = renderIds(mergedSegments.leftSegments);
-  const rightRendered = renderIds(mergedSegments.rightSegments);
+  let leftRendered = renderIds(mergedSegments.leftSegments);
+  let rightRendered = renderIds(mergedSegments.rightSegments);
   const secondaryRendered = renderIds(mergedSegments.secondarySegments);
 
   if (leftRendered.length === 0 && rightRendered.length === 0 && secondaryRendered.length === 0) {
     return { topContent: "", secondaryContent: "" };
   }
 
-  const baseOverhead = 2;
-  const rightWidth = rightRendered.reduce((sum, seg, idx) => sum + seg.width + (idx > 0 ? sepWidth : 0), 0);
-  const reservedRightWidth = rightWidth > 0 ? rightWidth + 2 : 0;
-  const leftAvailableWidth = Math.max(0, availableWidth - reservedRightWidth - (rightWidth > 0 ? 1 : 0));
+  const segmentsWidth = (segments: readonly { width: number }[]) =>
+    segments.reduce((sum, seg, idx) => sum + seg.width + (idx > 0 ? sepWidth : 0), 0);
+  const fullWidth = () => {
+    const leftWidth = segmentsWidth(leftRendered);
+    const rightWidth = segmentsWidth(rightRendered);
+    if (leftWidth > 0 && rightWidth > 0) return leftWidth + rightWidth + 1;
+    if (leftWidth > 0 || rightWidth > 0) return leftWidth + rightWidth + 1;
+    return 0;
+  };
+  const rerenderFlexibleSegment = (
+    seg: { id: StatusLineSegmentId; content: string; width: number },
+    maxWidth: number,
+  ) => {
+    const boundedWidth = Math.max(0, Math.floor(maxWidth));
+    const flexibleCtx: SegmentContext = {
+      ...ctx,
+      options: {
+        ...ctx.options,
+        session: seg.id === "session"
+          ? { ...ctx.options.session, maxWidth: boundedWidth, showStash: false }
+          : ctx.options.session,
+        path: seg.id === "path"
+          ? { ...ctx.options.path, maxWidth: boundedWidth }
+          : ctx.options.path,
+      },
+    };
+    return renderSegmentWithWidth(seg.id, flexibleCtx);
+  };
 
-  let currentWidth = baseOverhead;
-  const topLeftSegments: string[] = [];
-  const overflowSegments: { id: StatusLineSegmentId; content: string; width: number }[] = [];
-  let overflow = false;
-
-  for (const seg of leftRendered) {
-    const separatorWidth = topLeftSegments.length > 0 ? sepWidth : 0;
-    const neededWidth = seg.width + separatorWidth;
-    if (!overflow && currentWidth + neededWidth <= leftAvailableWidth) {
-      topLeftSegments.push(seg.content);
-      currentWidth += neededWidth;
-    } else if (!overflow && seg.id === "session") {
-      const remainingWidth = leftAvailableWidth - currentWidth - separatorWidth;
-      if (remainingWidth > 16) {
-        const sessionCtx: SegmentContext = {
-          ...ctx,
-          options: {
-            ...ctx.options,
-            session: { ...ctx.options.session, maxWidth: remainingWidth, showStash: false },
-          },
-        };
-        const truncated = renderSegmentWithWidth(seg.id, sessionCtx);
-        if (truncated.visible && truncated.width <= remainingWidth) {
-          topLeftSegments.push(truncated.content);
-          currentWidth += truncated.width + separatorWidth;
-        }
-      }
-      overflow = true;
-    } else {
-      overflow = true;
-      overflowSegments.push(seg);
+  // Keep the statusline single-line. Truncate the session title first. Once the
+  // session title is completely gone, remove whole metric segments (never partial
+  // values like "3…") in priority order: cost, tokens, then context percent.
+  const sessionIndex = leftRendered.findIndex((seg) => seg.id === "session");
+  if (sessionIndex !== -1 && fullWidth() > availableWidth) {
+    const current = leftRendered[sessionIndex];
+    const targetWidth = Math.max(0, current.width - (fullWidth() - availableWidth));
+    const truncated = rerenderFlexibleSegment(current, targetWidth);
+    if (truncated.visible) {
+      leftRendered = leftRendered.map((seg, idx) => idx === sessionIndex ? { id: current.id, ...truncated } : seg);
     }
   }
 
+  if (fullWidth() > availableWidth) {
+    leftRendered = leftRendered.filter((seg) => seg.id !== "session");
+  }
+
+  for (const id of ["cost", "cache_read", "cache_write", "token_total", "token_in", "token_out", "context_pct"] as const) {
+    if (fullWidth() <= availableWidth) break;
+    rightRendered = rightRendered.filter((seg) => seg.id !== id);
+  }
+  while (leftRendered.length > 0 && fullWidth() > availableWidth) {
+    leftRendered.pop();
+  }
+
+  const topLeftSegments = leftRendered.map((seg) => seg.content);
   const topRightSegments = rightRendered.map((seg) => seg.content);
 
-  let secondaryWidth = baseOverhead;
+  let secondaryWidth = 0;
   const secondarySegments: string[] = [];
-  for (const seg of [...overflowSegments, ...secondaryRendered]) {
+  for (const seg of secondaryRendered) {
     const neededWidth = seg.width + (secondarySegments.length > 0 ? sepWidth : 0);
     if (secondaryWidth + neededWidth <= availableWidth) {
       secondarySegments.push(seg.content);
@@ -2143,7 +2189,8 @@ export default function powerlineFooter(pi: ExtensionAPI) {
     if (bashModeActive || !showLastPrompt) return [];
 
     const vimStatus = getInlineVimStatus();
-    const vimPrefix = vimStatus.mode ? ` ${ansi.getFgAnsi(238, 238, 238)}${vimStatus.mode}${ansi.reset} ` : "";
+    const [vimR, vimG, vimB] = hexToRgbTuple(readVesperPanelFg());
+    const vimPrefix = vimStatus.mode ? ` ${ansi.getFgAnsi(vimR, vimG, vimB)}${vimStatus.mode}${ansi.reset} ` : "";
     let pendingSuffix = vimStatus.pending ? ` ${getFgAnsiCode("muted")}${vimStatus.pending}${ansi.reset} ` : "";
 
     const fitPendingOnlyLine = () => {

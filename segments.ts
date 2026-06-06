@@ -53,6 +53,24 @@ function withIcon(icon: string, text: string): string {
   return icon ? `${icon} ${text}` : text;
 }
 
+function iconPrefix(icon: string): string {
+  return icon ? `${icon} ` : "";
+}
+
+function truncateFromStartToWidth(text: string, maxWidth: number): string {
+  if (maxWidth <= 0) return "";
+  if (visibleWidth(text) <= maxWidth) return text;
+  if (maxWidth === 1) return "…";
+
+  let result = "";
+  for (const char of [...text].reverse()) {
+    const next = `${char}${result}`;
+    if (visibleWidth(next) > maxWidth - 1) break;
+    result = next;
+  }
+  return `…${result}`;
+}
+
 function formatTokens(n: number): string {
   if (n < 1000) return n.toString();
   if (n < 10000) return `${(n / 1000).toFixed(1)}k`;
@@ -155,7 +173,14 @@ const pathSegment: StatusLineSegment = {
       }
     }
 
-    const content = withIcon(icons.folder, pwd);
+    const prefix = iconPrefix(icons.folder);
+    const maxWidth = ctx.options.path?.maxWidth;
+    if (typeof maxWidth === "number") {
+      const textMaxWidth = Math.max(0, Math.floor(maxWidth) - visibleWidth(prefix));
+      pwd = truncateFromStartToWidth(pwd, textMaxWidth);
+    }
+
+    const content = `${prefix}${pwd}`;
     return { content: color(ctx, "path", content), visible: true };
   },
 };
@@ -348,14 +373,18 @@ const sessionSegment: StatusLineSegment = {
     const icons = getIcons();
     const sessionId = ctx.sessionId;
     const rawDisplay = ctx.sessionName?.trim() || ctx.lastUserPrompt?.replace(/\s+/g, " ").trim() || sessionId?.slice(0, 8) || "new";
-    const maxWidth = Math.max(1, ctx.options.session?.maxWidth ?? 72);
-    const display = visibleWidth(rawDisplay) > maxWidth
-      ? `${truncateToWidth(rawDisplay, maxWidth - 1, "")}${applyColor(ctx.theme, "muted", "…")}`
-      : rawDisplay;
+    const maxWidth = Math.max(0, ctx.options.session?.maxWidth ?? 72);
+    const prefix = iconPrefix(icons.session);
+    const displayMaxWidth = Math.max(0, maxWidth - visibleWidth(prefix));
+    const display = displayMaxWidth === 0
+      ? ""
+      : visibleWidth(rawDisplay) > displayMaxWidth
+        ? `${truncateToWidth(rawDisplay, Math.max(0, displayMaxWidth - 1), "")}${applyColor(ctx.theme, "muted", "…")}`
+        : rawDisplay;
     const stashStatus = ctx.options.session?.showStash === false ? "" : normalizeExtensionStatusValue(ctx.extensionStatuses.get("stash") ?? "");
     const stashSuffix = stashStatus ? `${color(ctx, "session", " | ")}${color(ctx, "model", stashStatus)}` : "";
 
-    return { content: `${color(ctx, "session", withIcon(icons.session, display))}${stashSuffix}`, visible: true };
+    return { content: `${color(ctx, "session", `${prefix}${display}`)}${stashSuffix}`, visible: true };
   },
 };
 

@@ -84,6 +84,7 @@ export interface StatusLineSegmentOptions {
   path?: { 
     mode?: "basename" | "abbreviated" | "full";
     maxLength?: number;
+    maxWidth?: number;
   };
   git?: { showBranch?: boolean; showStaged?: boolean; showUnstaged?: boolean; showUntracked?: boolean };
   session?: { maxWidth?: number; showStash?: boolean };

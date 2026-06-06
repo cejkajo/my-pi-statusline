@@ -110,7 +110,7 @@ export function mergeSegmentsWithCustomItems(presetDef: PresetDef, customItems: 
 
   for (const item of customItems) {
     const segmentId: StatusLineSegmentId = `custom:${item.id}`;
-    if (item.position === "left") left.push(segmentId);
+    if (item.position === "left") left.unshift(segmentId);
     else if (item.position === "secondary") secondary.push(segmentId);
     else right.push(segmentId);
   }
