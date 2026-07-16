@@ -988,7 +988,7 @@ function computeResponsiveLayout(
 
   // Keep the statusline single-line. Truncate the session title first. Once the
   // session title is completely gone, remove whole metric segments (never partial
-  // values like "3…") in priority order: cost, tokens, then context percent.
+  // values like "3…") in priority order: cost, cache, cumulative tokens, then context.
   const sessionIndex = leftRendered.findIndex((seg) => seg.id === "session");
   if (sessionIndex !== -1 && fullWidth() > availableWidth) {
     const current = leftRendered[sessionIndex];
@@ -1003,7 +1003,17 @@ function computeResponsiveLayout(
     leftRendered = leftRendered.filter((seg) => seg.id !== "session");
   }
 
-  for (const id of ["cost", "cache_read", "cache_write", "token_total", "token_in", "token_out", "context_pct"] as const) {
+  for (const id of [
+    "cost",
+    "cache_read",
+    "cache_write",
+    "token_total",
+    "token_in",
+    "token_out",
+    "context_pct",
+    "context_total",
+    "context_usage",
+  ] as const) {
     if (fullWidth() <= availableWidth) break;
     rightRendered = rightRendered.filter((seg) => seg.id !== id);
   }
@@ -2052,6 +2062,7 @@ export default function powerlineFooter(pi: ExtensionAPI) {
       sessionName: ctx.sessionManager?.getSessionName?.(),
       lastUserPrompt,
       usageStats: { input, output, cacheRead, cacheWrite, cost },
+      contextTokens,
       contextPercent,
       contextWindow,
       autoCompactEnabled: ctx.settingsManager?.getCompactionSettings?.()?.enabled ?? true,
@@ -2628,9 +2639,11 @@ export default function powerlineFooter(pi: ExtensionAPI) {
 
     if (config.fixedEditor) {
       ctx.ui.setEditorComponent(editorFactory);
-    } else {
-      ctx.ui.setEditorComponent(undefined);
     }
+    // When fixedEditor is disabled, leave the current editor component untouched.
+    // This lets editor extensions loaded earlier (notably @leohenon/pi-vim) keep
+    // owning the editor. Clearing here resets pi-vim back to the default insert-only
+    // editor when this statusline package loads after it.
     clearPowerlineWidgets(ctx);
 
     ctx.ui.setFooter((tui: any, _theme: Theme, footerData: ReadonlyFooterDataProvider) => {
