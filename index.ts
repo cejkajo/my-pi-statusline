@@ -27,7 +27,7 @@ import type { BashModeSettings } from "./bash-mode/types.ts";
 import { getPreset, PRESETS } from "./presets.js";
 import { collectHiddenExtensionStatusKeys, getNotificationExtensionStatuses, mergeSegmentsWithCustomItems, nextPowerlineSettingWithOptions, nextPowerlineSettingWithPreset, parsePowerlineConfig } from "./powerline-config.js";
 import { getSeparator } from "./separators.js";
-import { renderSegment } from "./segments.js";
+import { getSessionDisplay, renderSegment } from "./segments.js";
 import { getGitStatus, invalidateGitStatus, invalidateGitBranch } from "./git-status.js";
 import { ansi, getFgAnsiCode } from "./colors.js";
 import { WelcomeComponent, WelcomeHeader, discoverLoadedCounts, getRecentSessions } from "./welcome.js";
@@ -2203,39 +2203,34 @@ export default function powerlineFooter(pi: ExtensionAPI) {
     const [vimR, vimG, vimB] = hexToRgbTuple(readVesperPanelFg());
     const vimPrefix = vimStatus.mode ? ` ${ansi.getFgAnsi(vimR, vimG, vimB)}${vimStatus.mode}${ansi.reset} ` : "";
     let pendingSuffix = vimStatus.pending ? ` ${getFgAnsiCode("muted")}${vimStatus.pending}${ansi.reset} ` : "";
-
-    const fitPendingOnlyLine = () => {
-      if (pendingSuffix && visibleWidth(vimPrefix) + visibleWidth(pendingSuffix) > width) {
-        pendingSuffix = "";
-      }
-      const line = `${vimPrefix}${pendingSuffix ? " ".repeat(Math.max(0, width - visibleWidth(vimPrefix) - visibleWidth(pendingSuffix))) + pendingSuffix : ""}`;
-      return line ? [truncateToWidth(line, width, "…")] : [""];
-    };
-
-    if (!lastUserPrompt) return fitPendingOnlyLine();
-
+    const sessionDisplay = getSessionDisplay(
+      currentCtx?.sessionManager?.getSessionName?.(),
+      lastUserPrompt,
+      currentCtx?.sessionManager?.getSessionId?.(),
+    );
     const promptPrefix = `${getFgAnsiCode("sep")}↳${ansi.reset} `;
     const prefix = `${vimPrefix}${promptPrefix}`;
     let availableWidth = width - visibleWidth(prefix) - visibleWidth(pendingSuffix);
+
     if (pendingSuffix && availableWidth < 10) {
       pendingSuffix = "";
       availableWidth = width - visibleWidth(prefix);
     }
-    if (availableWidth < 10) return fitPendingOnlyLine();
+    if (availableWidth < 10) {
+      const line = truncateToWidth(vimPrefix, width, "…");
+      return line ? [line] : [""];
+    }
 
-    let promptText = lastUserPrompt.replace(/\s+/g, " ").trim();
-    if (!promptText) return fitPendingOnlyLine();
-
-    promptText = truncateToWidth(promptText, availableWidth, "…");
-
-    const styledPrompt = `${getFgAnsiCode("sep")}${promptText}${ansi.reset}`;
-    const left = `${prefix}${styledPrompt}`;
+    const sessionText = truncateToWidth(sessionDisplay, availableWidth, "…");
+    const styledSession = `${getFgAnsiCode("sep")}${sessionText}${ansi.reset}`;
+    const left = `${prefix}${styledSession}`;
     if (pendingSuffix && visibleWidth(left) + 1 + visibleWidth(pendingSuffix) > width) {
       pendingSuffix = "";
     }
-    const gap = pendingSuffix ? " ".repeat(Math.max(1, width - visibleWidth(left) - visibleWidth(pendingSuffix))) : "";
-    const line = `${left}${gap}${pendingSuffix}`;
-    return [truncateToWidth(line, width, "…")];
+    const gap = pendingSuffix
+      ? " ".repeat(Math.max(1, width - visibleWidth(left) - visibleWidth(pendingSuffix)))
+      : "";
+    return [`${left}${gap}${pendingSuffix}`];
   }
 
   function teardownFixedEditorCompositor(options?: { resetExtendedKeyboardModes?: boolean }) {

@@ -406,12 +406,22 @@ const timeSegment: StatusLineSegment = {
   },
 };
 
+export function getSessionDisplay(
+  sessionName: string | undefined,
+  lastUserPrompt: string | undefined,
+  sessionId: string | undefined,
+): string {
+  return sessionName?.trim()
+    || lastUserPrompt?.replace(/\s+/g, " ").trim()
+    || sessionId?.slice(0, 8)
+    || "new";
+}
+
 const sessionSegment: StatusLineSegment = {
   id: "session",
   render(ctx) {
     const icons = getIcons();
-    const sessionId = ctx.sessionId;
-    const rawDisplay = ctx.sessionName?.trim() || ctx.lastUserPrompt?.replace(/\s+/g, " ").trim() || sessionId?.slice(0, 8) || "new";
+    const rawDisplay = getSessionDisplay(ctx.sessionName, ctx.lastUserPrompt, ctx.sessionId);
     const maxWidth = Math.max(0, ctx.options.session?.maxWidth ?? 72);
     const prefix = iconPrefix(icons.session);
     const displayMaxWidth = Math.max(0, maxWidth - visibleWidth(prefix));
