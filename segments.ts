@@ -181,7 +181,13 @@ const pathSegment: StatusLineSegment = {
     }
 
     const content = `${prefix}${pwd}`;
-    return { content: color(ctx, "path", content), visible: true };
+    // Gondolin extension sets the "gondolin" status only while its VM is running.
+    // In the VM: configured path colour (blue). On the host: error colour (red) as a warning.
+    const inGondolinVm = Boolean(ctx.extensionStatuses.get("gondolin"));
+    return {
+      content: inGondolinVm ? color(ctx, "path", content) : applyColor(ctx.theme, "error", content),
+      visible: true,
+    };
   },
 };
 
