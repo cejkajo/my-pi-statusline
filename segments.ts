@@ -11,6 +11,12 @@ function color(ctx: SegmentContext, semantic: SemanticColor, text: string): stri
   return fg(ctx.theme, semantic, text, ctx.colors);
 }
 
+function stripAnsi(value: string): string {
+  return value
+    .replace(/\x1b\[[0-9;?]*[ -/]*[@-~]/g, "")
+    .replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g, "");
+}
+
 function getTelegramConfigPath(): string {
   const home = process.env.HOME || process.env.USERPROFILE;
   return home ? join(home, ".pi", "agent", "telegram.json") : "";
@@ -551,7 +557,7 @@ function renderCustomSegment(id: `custom:${string}`, ctx: SegmentContext): Rende
     content = `${custom.prefix}${SEP_DOT}${content}`;
   }
   if (custom.color) {
-    content = applyColor(ctx.theme, custom.color, content);
+    content = applyColor(ctx.theme, custom.color, stripAnsi(content));
   }
 
   return { content, visible: true };
