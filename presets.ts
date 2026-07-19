@@ -23,10 +23,10 @@ const NERD_COLORS: ColorScheme = {
 
 export const PRESETS: Record<StatusLinePreset, PresetDef> = {
   default: {
-    // Vesper order: git branch first, then full path and session context.
-    // Model/token/context/cache/cost metrics are right-aligned like a status bar.
-    leftSegments: ["path", "session", "shell_mode"],
-    rightSegments: ["telegram", "model", "thinking", "token_in", "token_out", "context_usage", "cache_read", "cost"],
+    // Keep project location and Git state together on the left.
+    // Model, token, and context metrics are right-aligned like a status bar.
+    leftSegments: ["path", "git", "shell_mode"],
+    rightSegments: ["telegram", "model", "thinking", "token_in", "token_out", "context_usage"],
     secondarySegments: [],
     separator: "pipe",
     colors: DEFAULT_COLORS,

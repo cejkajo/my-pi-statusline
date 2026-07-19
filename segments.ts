@@ -196,12 +196,22 @@ const gitSegment: StatusLineSegment = {
   render(ctx) {
     const icons = getIcons();
     const opts = ctx.options.git ?? {};
-    const { branch } = ctx.git;
+    const { branch, staged, unstaged, untracked } = ctx.git;
 
     if (!branch || opts.showBranch === false) return { content: "", visible: false };
 
+    const changes = [
+      opts.showStaged !== false && staged > 0 ? `+${staged}` : "",
+      opts.showUnstaged !== false && unstaged > 0 ? `~${unstaged}` : "",
+      opts.showUntracked !== false && untracked > 0 ? `?${untracked}` : "",
+    ].filter(Boolean);
+    const branchContent = color(ctx, "gitClean", withIcon(icons.branch, branch));
+    const changesContent = changes.length > 0
+      ? ` ${color(ctx, "gitDirty", changes.join(" "))}`
+      : "";
+
     return {
-      content: color(ctx, "gitClean", withIcon(icons.branch, branch)),
+      content: `${branchContent}${changesContent}`,
       visible: true,
     };
   },

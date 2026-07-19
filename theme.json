@@ -1,10 +1,10 @@
 {
   "colors": {
-    "model": "text",
+    "model": "mdHeading",
     "shellMode": "success",
-    "path": "text",
+    "path": "mdLink",
     "gitDirty": "warning",
-    "gitClean": "text",
+    "gitClean": "accent",
     "thinking": "muted",
     "thinkingMinimal": "muted",
     "thinkingLow": "muted",
