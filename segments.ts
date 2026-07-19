@@ -316,6 +316,14 @@ const costSegment: StatusLineSegment = {
   },
 };
 
+const CONTEXT_DANGER_USED_PERCENT = 20;
+
+function colorContextUsage(ctx: SegmentContext, text: string, usedPercent: number): string {
+  return usedPercent > CONTEXT_DANGER_USED_PERCENT
+    ? color(ctx, "contextError", text)
+    : applyColor(ctx.theme, "success", text);
+}
+
 const contextPctSegment: StatusLineSegment = {
   id: "context_pct",
   render(ctx) {
@@ -323,11 +331,7 @@ const contextPctSegment: StatusLineSegment = {
 
     const pct = ctx.contextPercent;
     const text = `${pct.toFixed(1)}%`;
-
-    if (pct > 20) {
-      return { content: color(ctx, "contextError", text), visible: true };
-    }
-    return { content: applyColor(ctx.theme, "success", text), visible: true };
+    return { content: colorContextUsage(ctx, text, pct), visible: true };
   },
 };
 
@@ -342,12 +346,9 @@ const contextUsageSegment: StatusLineSegment = {
     const icons = getIcons();
     const tokenText = withIcon(icons.context, `${formatTokens(tokens)}/${formatTokens(window)}`);
     const percentText = `${pct.toFixed(1)}%`;
-    const coloredPercent = pct > 20
-      ? color(ctx, "contextError", percentText)
-      : applyColor(ctx.theme, "success", percentText);
 
     return {
-      content: `${color(ctx, "context", tokenText)} ${coloredPercent}`,
+      content: `${color(ctx, "tokens", tokenText)} ${colorContextUsage(ctx, percentText, pct)}`,
       visible: true,
     };
   },
