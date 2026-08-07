@@ -1,4 +1,4 @@
-import type { Theme, ThemeColor } from "@mariozechner/pi-coding-agent";
+import type { Theme, ThemeColor } from "@earendil-works/pi-coding-agent";
 
 // Theme color - either a pi theme color name or a custom hex color
 export type ColorValue = ThemeColor | `#${string}`;
@@ -158,9 +158,7 @@ export interface SegmentContext {
   contextTokens: number;
   contextPercent: number;
   contextWindow: number;
-  autoCompactEnabled: boolean;
   customCompactionEnabled: boolean;
-  usingSubscription: boolean;
   sessionStartTime: number;
   shellModeActive: boolean;
   shellRunning: boolean;

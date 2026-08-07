@@ -1,11 +1,13 @@
 import { hostname as osHostname } from "node:os";
 import { existsSync, readFileSync } from "node:fs";
 import { join, basename } from "node:path";
-import { truncateToWidth, visibleWidth } from "@mariozechner/pi-tui";
+import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import type { BuiltinStatusLineSegmentId, RenderedSegment, SegmentContext, SemanticColor, StatusLineSegment, StatusLineSegmentId } from "./types.ts";
 import { normalizeCompactExtensionStatus, normalizeExtensionStatusValue } from "./powerline-config.ts";
 import { fg, applyColor } from "./theme.ts";
 import { getIcons, SEP_DOT, getThinkingText } from "./icons.ts";
+import { getSessionDisplay } from "./session-display.ts";
+import { getContextTokenColor } from "./context-token-warning.ts";
 
 function color(ctx: SegmentContext, semantic: SemanticColor, text: string): string {
   return fg(ctx.theme, semantic, text, ctx.colors);
@@ -350,11 +352,13 @@ const contextUsageSegment: StatusLineSegment = {
     if (!window) return { content: "", visible: false };
 
     const icons = getIcons();
-    const tokenText = withIcon(icons.context, `${formatTokens(tokens)}/${formatTokens(window)}`);
+    const iconText = icons.context ? `${color(ctx, "tokens", icons.context)} ` : "";
+    const usedText = color(ctx, getContextTokenColor(tokens), formatTokens(tokens));
+    const totalText = color(ctx, "tokens", `/${formatTokens(window)}`);
     const percentText = `${pct.toFixed(1)}%`;
 
     return {
-      content: `${color(ctx, "tokens", tokenText)} ${colorContextUsage(ctx, percentText, pct)}`,
+      content: `${iconText}${usedText}${totalText} ${colorContextUsage(ctx, percentText, pct)}`,
       visible: true,
     };
   },
@@ -411,17 +415,6 @@ const timeSegment: StatusLineSegment = {
     return { content: withIcon(icons.time, timeStr), visible: true };
   },
 };
-
-export function getSessionDisplay(
-  sessionName: string | undefined,
-  lastUserPrompt: string | undefined,
-  sessionId: string | undefined,
-): string {
-  return sessionName?.trim()
-    || lastUserPrompt?.replace(/\s+/g, " ").trim()
-    || sessionId?.slice(0, 8)
-    || "new";
-}
 
 const sessionSegment: StatusLineSegment = {
   id: "session",

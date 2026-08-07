@@ -1,24 +1,30 @@
 {
   "name": "my-pi-statusline",
-  "version": "0.1.0",
-  "description": "Personal Pi statusline",
+  "version": "0.2.0",
+  "description": "Personal Pi statusline with subscription usage limits",
   "type": "module",
   "private": true,
-  "files": [
-    "*.ts",
-    "*.json",
-    "bash-mode/**/*.ts",
-    "fixed-editor/**/*.ts"
-  ],
+  "license": "UNLICENSED",
+  "scripts": {
+    "check": "node scripts/check-types.mjs",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "test:e2e": "./test/pi-084-tui-smoke.sh"
+  },
   "keywords": [
     "pi-package",
     "pi",
-    "statusline"
+    "statusline",
+    "usage-limits"
   ],
-  "author": "Leo Henon",
-  "license": "UNLICENSED",
-  "scripts": {
-    "check": "node --experimental-strip-types --check index.ts"
+  "author": "Josef Cejka",
+  "contributors": [
+    "Leo Henon",
+    "nicobailon"
+  ],
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
   },
   "pi": {
     "extensions": [

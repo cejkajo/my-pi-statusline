@@ -1,7 +1,7 @@
-import { CustomEditor } from "@mariozechner/pi-coding-agent";
-import { isKeyRelease, matchesKey, visibleWidth, truncateToWidth } from "@mariozechner/pi-tui";
-import type { KeybindingsManager } from "@mariozechner/pi-coding-agent/dist/core/keybindings.js";
-import type { AutocompleteProvider } from "@mariozechner/pi-tui";
+import { CustomEditor } from "@earendil-works/pi-coding-agent";
+import { isKeyRelease, matchesKey, visibleWidth, truncateToWidth } from "@earendil-works/pi-tui";
+import type { KeybindingsManager } from "@earendil-works/pi-coding-agent";
+import type { AutocompleteProvider } from "@earendil-works/pi-tui";
 import { matchesConfiguredShortcut } from "../shortcuts.ts";
 import { getOneOffBashCommandContext } from "./completion.ts";
 import type { GhostSuggestion } from "./types.ts";

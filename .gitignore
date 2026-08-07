@@ -1,3 +1,4 @@
-package-lock.json
 progress.md
 node_modules/
+.tmp-pi-084-tui.*
+.s[0-9]*
