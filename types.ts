@@ -94,10 +94,20 @@ export interface StatusLineSegmentOptions {
 
 export type CustomItemPosition = "left" | "right" | "secondary";
 
+/** Where an anchored custom item is inserted relative to its anchor segment. */
+export type CustomItemAnchorPlacement = "after" | "before";
+
 export interface CustomStatusItem {
   id: string;
   statusKey: string;
   position: CustomItemPosition;
+  /**
+   * Optional segment to attach this item to: a built-in segment id ("model") or
+   * another custom item id ("usage-limits", or its "custom:usage-limits" form).
+   * A resolvable anchor wins over `position`; an unresolvable one falls back to it.
+   */
+  anchor?: string;
+  anchorPlacement: CustomItemAnchorPlacement;
   color?: ColorValue;
   prefix?: string;
   hideWhenMissing: boolean;
