@@ -124,6 +124,23 @@ test("orders several items sharing one anchor deterministically", () => {
   assert.deepEqual(mergeSegmentsWithCustomItems(preset(), items).rightSegments, expected);
 });
 
+test("keeps adjacency when before and after anchors interleave", () => {
+  const items = [
+    item({ id: "x", anchor: "model" }),
+    item({ id: "y", anchor: "x", anchorPlacement: "before" }),
+    item({ id: "z", anchor: "model" }),
+  ];
+
+  assert.deepEqual(mergeSegmentsWithCustomItems(preset(), items).rightSegments, [
+    "model",
+    "custom:y",
+    "custom:x",
+    "custom:z",
+    "thinking",
+    "context_usage",
+  ]);
+});
+
 test("normalizes malformed anchor configuration away instead of crashing", () => {
   const config = parsePowerlineConfig({
     customItems: {

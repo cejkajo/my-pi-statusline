@@ -143,12 +143,21 @@ export function mergeSegmentsWithCustomItems(presetDef: PresetDef, customItems: 
     else placeByPosition(item, `custom:${item.id}`);
   }
 
-  // Number of items already inserted after a given anchor, so that several items
+  // The most recent item inserted after a given anchor, so that several items
   // sharing one anchor keep configuration order instead of stacking in reverse.
-  const afterCounts = new Map<string, number>();
+  // Positions are re-derived from the live lists because every insertion shifts
+  // the indices of the segments that follow it.
+  const lastAfterSibling = new Map<string, StatusLineSegmentId>();
   const findAnchor = (anchor: string) => {
     for (const side of sides) {
       const index = side.findIndex((segId) => segId === anchor || segId === `custom:${anchor}`);
+      if (index !== -1) return { side, index };
+    }
+    return null;
+  };
+  const findSegment = (segmentId: StatusLineSegmentId) => {
+    for (const side of sides) {
+      const index = side.indexOf(segmentId);
       if (index !== -1) return { side, index };
     }
     return null;
@@ -169,9 +178,10 @@ export function mergeSegmentsWithCustomItems(presetDef: PresetDef, customItems: 
         continue;
       }
       const anchorSegmentId = anchor.side[anchor.index];
-      const offset = afterCounts.get(anchorSegmentId) ?? 0;
-      anchor.side.splice(anchor.index + 1 + offset, 0, segmentId);
-      afterCounts.set(anchorSegmentId, offset + 1);
+      const sibling = lastAfterSibling.get(anchorSegmentId);
+      const target = (sibling ? findSegment(sibling) : null) ?? anchor;
+      target.side.splice(target.index + 1, 0, segmentId);
+      lastAfterSibling.set(anchorSegmentId, segmentId);
     }
 
     // No progress means every remaining anchor is unknown or part of a cycle.
