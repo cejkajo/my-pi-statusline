@@ -8,6 +8,7 @@ import { fg, applyColor } from "./theme.ts";
 import { getIcons, SEP_DOT, getThinkingText } from "./icons.ts";
 import { getSessionDisplay } from "./session-display.ts";
 import { getContextTokenColor } from "./context-token-warning.ts";
+import { getCacheHitDisplay } from "./cache-hit.ts";
 
 function color(ctx: SegmentContext, semantic: SemanticColor, text: string): string {
   return fg(ctx.theme, semantic, text, ctx.colors);
@@ -455,6 +456,17 @@ const telegramSegment: StatusLineSegment = {
   },
 };
 
+const cacheHitSegment: StatusLineSegment = {
+  id: "cache_hit",
+  render(ctx) {
+    const display = getCacheHitDisplay(ctx.lastTurnUsage);
+    if (!display) return { content: "", visible: false };
+
+    const content = withIcon(getIcons().cache, `${display.percent}%`);
+    return { content: applyColor(ctx.theme, display.color, content), visible: true };
+  },
+};
+
 const cacheReadSegment: StatusLineSegment = {
   id: "cache_read",
   render(ctx) {
@@ -529,6 +541,7 @@ export const SEGMENTS: Record<BuiltinStatusLineSegmentId, StatusLineSegment> = {
   session: sessionSegment,
   hostname: hostnameSegment,
   telegram: telegramSegment,
+  cache_hit: cacheHitSegment,
   cache_read: cacheReadSegment,
   cache_write: cacheWriteSegment,
   extension_statuses: extensionStatusesSegment,

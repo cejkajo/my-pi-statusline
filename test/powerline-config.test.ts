@@ -49,8 +49,7 @@ test("anchors an item directly after a built-in segment of the default preset", 
     "model",
     "custom:openai-codex-fast-local",
     "thinking",
-    "token_in",
-    "token_out",
+    "cache_hit",
     "context_usage",
   ]);
 });
@@ -177,8 +176,7 @@ test("leaves the preset definitions untouched", () => {
     "telegram",
     "model",
     "thinking",
-    "token_in",
-    "token_out",
+    "cache_hit",
     "context_usage",
   ]);
 });

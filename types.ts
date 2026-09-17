@@ -48,6 +48,7 @@ export type BuiltinStatusLineSegmentId =
   | "session"
   | "hostname"
   | "telegram"
+  | "cache_hit"
   | "cache_read"
   | "cache_write"
   | "thinking"
@@ -154,6 +155,8 @@ export interface UsageStats {
   cost: number;
 }
 
+export type LastTurnUsage = Pick<UsageStats, "input" | "output" | "cacheRead" | "cacheWrite">;
+
 // Context passed to segment render functions
 export interface SegmentContext {
   // From pi-mono
@@ -165,6 +168,7 @@ export interface SegmentContext {
   
   // Computed
   usageStats: UsageStats;
+  lastTurnUsage: LastTurnUsage | undefined;
   contextTokens: number;
   contextPercent: number;
   contextWindow: number;

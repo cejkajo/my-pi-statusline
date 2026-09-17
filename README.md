@@ -53,7 +53,7 @@ By default a custom item is placed by `position`: `left` items go to the front o
 }
 ```
 
-With the `default` preset this renders the item's glyph directly after the model name: `telegram | model | openai-codex-fast-local | thinking | token_in | token_out | context_usage`.
+With the `default` preset this renders the item's glyph directly after the model name: `telegram | model | openai-codex-fast-local | thinking | cache_hit | context_usage`.
 
 - `anchor` names a built-in segment (`model`, `git`, ...) or another custom item, either by its bare id (`usage-limits`) or its segment id (`custom:usage-limits`).
 - `anchorPlacement` is `"after"` (default) or `"before"`.

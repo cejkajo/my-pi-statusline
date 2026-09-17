@@ -62,7 +62,7 @@ export const NERD_ICONS: IconSet = {
   cost: "\uF155",       // nf-fa-dollar
   time: "\uF017",       // nf-fa-clock_o
   agents: "\uF0C0",     // nf-fa-users
-  cache: "",
+  cache: "\uF1C0",      // nf-fa-database
   input: "\uF090",      // nf-fa-sign_in (input arrow)
   output: "\uF08B",     // nf-fa-sign_out (output arrow)
   host: "\uF109",       // nf-fa-laptop (host)
@@ -84,7 +84,7 @@ export const ASCII_ICONS: IconSet = {
   cost: "$",
   time: "◷",
   agents: "AG",
-  cache: "",
+  cache: "cache",
   input: "in:",
   output: "out:",
   host: "host",

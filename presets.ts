@@ -24,9 +24,9 @@ const NERD_COLORS: ColorScheme = {
 export const PRESETS: Record<StatusLinePreset, PresetDef> = {
   default: {
     // Keep project location and Git state together on the left.
-    // Model, token, and context metrics are right-aligned like a status bar.
+    // Model, cache-hit, and context metrics are right-aligned like a status bar.
     leftSegments: ["path", "git", "shell_mode"],
-    rightSegments: ["telegram", "model", "thinking", "token_in", "token_out", "context_usage"],
+    rightSegments: ["telegram", "model", "thinking", "cache_hit", "context_usage"],
     secondarySegments: [],
     separator: "pipe",
     colors: DEFAULT_COLORS,

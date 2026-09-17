@@ -934,6 +934,7 @@ function computeResponsiveLayout(
 
   for (const id of [
     "cost",
+    "cache_hit",
     "cache_read",
     "cache_write",
     "token_total",
@@ -1829,6 +1830,7 @@ export default function powerlineFooter(pi: ExtensionAPI) {
       sessionName: ctx.sessionManager?.getSessionName?.(),
       lastUserPrompt,
       usageStats: { input, output, cacheRead, cacheWrite, cost },
+      lastTurnUsage: latestUsage,
       contextTokens,
       contextPercent,
       contextWindow,
